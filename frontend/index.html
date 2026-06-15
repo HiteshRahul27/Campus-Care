@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>School Health — Login</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --c1:#A7EBF2;--c2:#54ACBF;--c3:#26658C;--c4:#023859;--c5:#011C40;
+      --surface:#03254d;--border:rgba(84,172,191,0.2);--text:#e8f4f8;--muted:#7baec4;
+    }
+    html,body{height:100%;font-family:'Inter',sans-serif;background:var(--c5);color:var(--text)}
+    body{display:flex;align-items:center;justify-content:center;min-height:100vh;
+      background:radial-gradient(ellipse at 30% 20%,rgba(38,101,140,0.4) 0%,transparent 60%),
+                 radial-gradient(ellipse at 80% 80%,rgba(2,56,89,0.6) 0%,transparent 60%),var(--c5)}
+
+    /* Floating orbs */
+    .orb{position:fixed;border-radius:50%;filter:blur(80px);opacity:.3;pointer-events:none;animation:drift 8s ease-in-out infinite}
+    .orb1{width:400px;height:400px;background:var(--c3);top:-100px;left:-100px;animation-delay:0s}
+    .orb2{width:300px;height:300px;background:var(--c2);bottom:-80px;right:-80px;animation-delay:3s}
+    @keyframes drift{0%,100%{transform:translate(0,0)}50%{transform:translate(30px,20px)}}
+
+    .login-card{
+      position:relative;z-index:1;
+      background:rgba(2,56,89,0.6);
+      border:1px solid var(--border);
+      border-radius:24px;
+      padding:48px 44px;
+      width:420px;
+      backdrop-filter:blur(20px);
+      box-shadow:0 32px 80px rgba(1,28,64,0.8),inset 0 1px 0 rgba(167,235,242,0.1);
+    }
+
+    .logo{
+      width:56px;height:56px;border-radius:16px;
+      background:linear-gradient(135deg,var(--c2),var(--c3));
+      display:flex;align-items:center;justify-content:center;
+      font-size:26px;margin:0 auto 20px;
+      box-shadow:0 8px 24px rgba(84,172,191,0.3);
+    }
+    h1{text-align:center;font-family:'Space Grotesk',sans-serif;font-size:26px;font-weight:700;
+       background:linear-gradient(135deg,var(--c1),var(--c2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+    .sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:32px}
+
+    .fg{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+    label{font-size:12px;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+    input{
+      padding:12px 16px;border-radius:12px;font-size:14px;font-family:'Inter',sans-serif;
+      background:rgba(1,28,64,0.6);border:1.5px solid var(--border);color:var(--text);outline:none;
+      transition:border-color .2s,box-shadow .2s;
+    }
+    input::placeholder{color:rgba(123,174,196,0.5)}
+    input:focus{border-color:var(--c2);box-shadow:0 0 0 3px rgba(84,172,191,0.15)}
+
+    .btn{
+      width:100%;padding:13px;border-radius:12px;border:none;cursor:pointer;
+      font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;
+      background:linear-gradient(135deg,var(--c2),var(--c3));color:#fff;
+      margin-top:8px;transition:all .2s;letter-spacing:.02em;
+      box-shadow:0 4px 20px rgba(84,172,191,0.3);
+    }
+    .btn:hover{transform:translateY(-1px);box-shadow:0 8px 28px rgba(84,172,191,0.4)}
+    .btn:active{transform:translateY(0)}
+    .btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+    .err{background:rgba(220,53,69,.15);border:1px solid rgba(220,53,69,.3);color:#f08080;
+         border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
+    .err.show{display:block}
+
+    .spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);
+          border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;vertical-align:middle;margin-right:6px}
+    @keyframes sp{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="login-card">
+    <div class="logo">🏥</div>
+    <h1>School Health</h1>
+    <p class="sub">Sign in to your account</p>
+    <div id="err" class="err"></div>
+    <div class="fg"><label>Username</label><input id="u" type="text" placeholder="Enter username" /></div>
+    <div class="fg"><label>Password</label><input id="p" type="password" placeholder="Enter password" /></div>
+    <button class="btn" id="btn" onclick="login()">Sign In</button>
+  </div>
+
+<script>
+  const API = localStorage.getItem("api_url") || "https://your-backend.onrender.com";
+  if (localStorage.getItem("token")) location.href = "app.html";
+  document.querySelectorAll("input").forEach(i => i.addEventListener("keydown", e => e.key==="Enter" && login()));
+
+  async function login() {
+    const err = document.getElementById("err");
+    const btn = document.getElementById("btn");
+    err.className = "err";
+    btn.innerHTML = '<span class="spin"></span>Signing in…'; btn.disabled = true;
+    try {
+      const res = await fetch(`${API}/auth/login`, {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({username: u.value.trim(), password: p.value})
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.detail || "Login failed");
+      localStorage.setItem("token", d.access_token);
+      localStorage.setItem("user", JSON.stringify(d.user));
+      location.href = "app.html";
+    } catch(e) {
+      err.textContent = e.message; err.className = "err show";
+      btn.innerHTML = "Sign In"; btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>
